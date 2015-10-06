@@ -42,10 +42,12 @@ int execBg(char *ex,char **args)
 	switch (fork())
 	{
 		case -1:
-			break;
+			return -2;
 		case 0:
 			execvp(ex,args);
+			return -1;
 		default:
+			wait();
 			return 0;
 	}
 }
@@ -190,4 +192,14 @@ yyerror(char* ex,char* flag){
 	}
 	printf("command not found\n");
 
+}
+
+int execute(proc *prc)
+{
+	int pip[2];
+
+	int ncmd = prc->nocmd;
+
+	execBg(prc->cmds[0]->ex,prc->cmds[0]->arg_list);
+	return 0;
 }
