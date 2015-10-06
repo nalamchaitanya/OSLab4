@@ -105,13 +105,22 @@ void* fill_proc(proc* p){
 					yyerror(p->cmds[i]->ex,d);
 				
 				if(*d=='>'){
-					flag=1;
-					d=strtok(NULL,"> ");
-					p->cmds[i]->fileout=d;
-					flag=0;
-					flag1=-1;
-					printf("%s\n",p->cmds[i]->fileout);
+					if(strcmp(d,">")==0){
+						flag=1;
+						d=strtok(NULL,"> ");
+						p->cmds[i]->fileout=d;
+						flag=0;
+						flag1=-1;
+						printf("%s \n",p->cmds[i]->fileout);
+					}
+					else {
+						d=strtok(d,">");
+						p->cmds[i]->fileout=d;
+						flag=0;
+						flag1=-1;
+						printf("%s \n",p->cmds[i]->fileout);
 					
+					}
 				}
 				else if(*d=='&'){
 					p->cmds[i]->BG=1;
@@ -120,10 +129,13 @@ void* fill_proc(proc* p){
 				else if(*d=='"'){
 					char* r=d;
 					d=strtok(NULL,"\"");
-					printf("%s yesy\n",r);
+					printf("%s %syesy\n",r,d);
 					if(d!=NULL){
-					r=strcat((++r)," ");
-					d=strcat(r,d);
+						r++;
+						r=strcat(r," ");
+						printf("%s %s 1\n",r,d);
+						d=strcat(r,d);
+						printf("%s %s2\n",r,d);
 					}else{d=r;}
 					p->cmds[i]->arg_list[s]=(char*)malloc(sizeof(char)*20);
 					p->cmds[i]->arg_list[s]=d;
