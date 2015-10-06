@@ -15,6 +15,7 @@ char* getPrompt()
 {
 	int sz =100;
 	char *prompt = (char*)malloc(sizeof(char)*sz);
+	*prompt='\0';
 	strcat(prompt,getlogin());
 	strcat(prompt,"@[");
 	char *buf=(char*)malloc(sizeof(char)*sz);
@@ -32,4 +33,19 @@ char* getPrompt()
 	strcat(prompt,buf);
 	strcat(prompt,"]");
 	return prompt;
- }
+}
+
+
+//Executes in the background.
+int execBg(char *ex,char **args)
+{
+	switch (fork())
+	{
+		case -1:
+			break;
+		case 0:
+			execvp(ex,args);
+		default:
+			return 0;
+	}
+}
