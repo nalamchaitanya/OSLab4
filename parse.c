@@ -109,21 +109,21 @@ void* fill_proc(proc* p)
 	int i;
 	char*d,*re;
 	int flag=2,flag1=0;
-	for(i=0;i<p->nocmd;i++)
-	{
+
+	char* r;
+	for(i=0;i<p->nocmd;i++){
 		p->cmds[i]->BG=0;
 		d=strtok(p->cmds[i]->ex," ");
 		re=strtok(NULL,"");
-
-		if(d!=NULL)
-		{
-			p->cmds[i]->ex=d;
-		}
 		p->cmds[i]->arg_list=(char**)malloc(sizeof(char*)*10);
-		p->cmds[i]->arg_list[0]=strdup(d);
+		if(d!=NULL){
+			p->cmds[i]->ex=d;
+			p->cmds[i]->arg_list[0]=d;
+		}
+
 		d=strtok(re," \n");
 
-		int s=0;
+		int s=1;
 		while(d!=NULL){
 
 			if(strcmp(d,"")!=0){
@@ -142,8 +142,8 @@ void* fill_proc(proc* p)
 						printf("%s \n",p->cmds[i]->fileout);
 					}
 					else {
-						d=strtok(d,">");
-						p->cmds[i]->fileout=d;
+
+						p->cmds[i]->fileout=(++d);
 						flag=0;
 						flag1=-1;
 						printf("%s \n",p->cmds[i]->fileout);
@@ -153,28 +153,55 @@ void* fill_proc(proc* p)
 				else if(*d=='&'){
 					p->cmds[i]->BG=1;
 					flag=-1;
+					printf("flag set\n");
 				}
 				else if(*d=='"'){
-					char* r=d;
+					r=(char*)malloc(sizeof(char)*100);
+					strcpy(r,d);
 					d=strtok(NULL,"\"");
-					printf("%s %syesy\n",r,d);
+
 					if(d!=NULL){
 						r++;
-						r=strcat(r," ");
-						printf("%s %s 1\n",r,d);
+						strcat(r," ");
 						d=strcat(r,d);
-						printf("%s %s2\n",r,d);
-					}else{d=r;}
-					p->cmds[i]->arg_list[s]=(char*)malloc(sizeof(char)*20);
+
+					}else{d=++r;d[strlen(d)-1]='\0';}
 					p->cmds[i]->arg_list[s]=d;
 					printf("%s\n",p->cmds[i]->arg_list[s]);
 					s++;
 				}
 				else {
-					p->cmds[i]->arg_list[s]=(char*)malloc(sizeof(char)*20);
 
-					if(*d=='-')
-						p->cmds[i]->arg_list[s]=++d;
+
+					if(*d=='-'){
+
+						if(d[2]=='>'){
+							printf("%s\n",d+2);
+							r=d+2;
+							if(strcmp(r,">")==0){
+								flag=1;
+								r=strtok(NULL,"> ");
+								p->cmds[i]->fileout=r;
+								flag=0;
+								flag1=-1;
+								printf("%s \n",p->cmds[i]->fileout);
+							}
+							else {
+
+								p->cmds[i]->fileout=(++r);
+								flag=0;
+								flag1=-1;
+								printf("%s \n",p->cmds[i]->fileout);
+
+							}
+							d[2]='\0';
+						}
+
+						p->cmds[i]->arg_list[s]=d;
+					}
+					//	printf("%s sdfsfd\n",strtok(d,">"));
+
+
 					printf("%s\n",p->cmds[i]->arg_list[s]);
 					s++;
 				}
