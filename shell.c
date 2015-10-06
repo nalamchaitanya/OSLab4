@@ -23,6 +23,8 @@ int main()
 		char*s=malloc(sizeof(char)*100);
 		gets(s);
 		proc** p=parsecmd(s);
+		//printf("%d\n",p[0]->nocmd);
+		//printf("%s\n",p[0]->cmds[0]->arg_list[0]);
 		break;
 	}
 	return 0;

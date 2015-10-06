@@ -11,8 +11,8 @@ typedef struct Cmd_{
 	char* ex;    //actual command
 	char** arg_list; 	//list of all flags  
 	int BG;			//background process flag
-	int filein;		//file in
-	int fileout;		//file out
+	char* filein;		//file in
+	char* fileout;		//file out
 }Cmd;
 //Gets the prompt of shell.
 char* getPrompt();
