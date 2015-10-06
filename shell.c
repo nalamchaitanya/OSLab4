@@ -22,10 +22,9 @@ int main()
 
 		// TODO take the line from the input stream and process it.
 		getline(cmd,(size_t*)n,stdin);
-		char **arg =(char**)malloc(sizeof(char*)*10);
 		*cmd=strndup(*cmd,strlen(*cmd)-1);
-		arg[0]=*cmd;
-		//arg[1]="-l";
+		printf("%s\n",*cmd );
+		proc** p=parsecmd(*cmd);
 
 		switch (fork())
 		{
@@ -33,7 +32,9 @@ int main()
 				printf("Fork failed.\n");
 				break;
 			case 0:
-				execvp(*cmd,arg);
+				printf("%s %s\n",p[0]->cmds[0]->ex,p[0]->cmds[0]->arg_list[0]);
+				execvp(p[0]->cmds[0]->ex,p[0]->cmds[0]->arg_list);
+				printf("ERROR\n");
 			default:
 				wait();
 		}
