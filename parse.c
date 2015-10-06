@@ -76,6 +76,7 @@ char* getPrompt()
  		}
  		procs[j]->nocmd=s;
  		fill_proc(procs[j]);
+
  	}
  	return procs;
  }
@@ -129,58 +130,25 @@ void* fill_proc(proc* p){
 					flag=-1;
 					printf("flag set\n");
 				}
-				else if(*d=='"'){
-					r=(char*)malloc(sizeof(char)*100);
-					strcpy(r,d);
-					d=strtok(NULL,"\"");
-					
-					if(d!=NULL){
-						r++;
-						strcat(r," ");
-						d=strcat(r,d);
-						
-					}else{d=++r;d[strlen(d)-1]='\0';}
+				else{
+					if(*d=='"' && d[strlen(d)-1]=='"'){
+						d=d+1;
+						d[strlen(d)-1]='\0';
+					}
 					p->cmds[i]->arg_list[s]=d;
 					printf("%s\n",p->cmds[i]->arg_list[s]);
 					s++;
 				}
-				else {
 				
-
-					if(*d=='-'){
-						
-						if(d[2]=='>'){
-							printf("%s\n",d+2);
-							r=d+2;	
-							if(strcmp(r,">")==0){
-								flag=1;
-								r=strtok(NULL,"> ");
-								p->cmds[i]->fileout=r;
-								flag=0;
-								flag1=-1;
-								printf("%s \n",p->cmds[i]->fileout);
-							}
-							else {
-								
-								p->cmds[i]->fileout=(++r);
-								flag=0;
-								flag1=-1;
-								printf("%s \n",p->cmds[i]->fileout);
-							
-							}
-							d[2]='\0';
-						}
-
-						p->cmds[i]->arg_list[s]=d;
-					}
-					//	printf("%s sdfsfd\n",strtok(d,">"));
-						
-					
-					printf("%s\n",p->cmds[i]->arg_list[s]);
-					s++;
-				}
 			}
 			d=strtok(NULL," \n");
+		}
+		if(p->cmds[i]->BG==1){
+			if(p->cmds[i]->fileout==NULL){
+				char str[100];
+				sprintf(str, "%s%d.bgoutput",p->cmds[i]->ex,i);
+				p->cmds[i]->fileout=str;
+			}
 		}
 	}
 
