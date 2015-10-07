@@ -10,6 +10,9 @@
 #include <string.h>
 #include "parse.h"
 
+Cmd **gcmds;
+int gncmd;
+
 //Gets the prompt of shell.
 char* getPrompt()
 {
@@ -45,10 +48,6 @@ int execFg(Cmd *cmd)
 			return -2;
 		case 0:
 			execvp(cmd->ex,cmd->arg_list);
-			if(cmd->fileout!=NULL)
-				close(cmd->fileout);
-			if(cmd->filein!=NULL)
-				close(cmd->filein);
 			return -1;
 		default:
 			wait();
@@ -210,25 +209,10 @@ yyerror(char* ex,char* flag){
 
 int execute(proc *prc)
 {
-	int pip[2];
-	int i;
-	int ncmd = prc->nocmd;
-
-	i=0;
-	while(i<ncmd)
-	{
-		if(i<ncmd-1)
-		{
-			pipe(pip);
-			dup2(STDOUT_FILENO,pip[1]);
-			prc->cmds[i]->fileout = pip[1];
-			dup2(STDIN_FILENO,pip[0]);
-			prc->cmds[i+1]->filein = pip[0];
-		}
-		execCmd(prc->cmds[i]);
-		i++;
-	}
-	return 0;
+	gcmds = prc->cmds;
+	gncmd = prc->nocmd;
+	int bgflag = prc->cmds[gncmd-1]->BG;
+	execProc(0,0);
 }
 
 
@@ -248,4 +232,36 @@ int execCmd(Cmd *cmd)
 		printf("we'll do it.\n");
 	else
 		execFg(cmd);
+}
+
+int execProc(int i,int in)
+{
+	if(i==gncmd)
+		return;
+	int pip[2];
+	if(i==0)
+		in=0;
+	pipe(pip);
+	int pid = fork();
+	switch (pid)
+	{
+		case -1:
+			printf("Fork failed.\n");
+			return -2;
+		case 0:
+			close(pip[0]);
+			dup2(in,0);
+			close(in);
+			if(i!=gncmd-1)
+				dup2(pip[1],1);
+			close(pip[1]);
+			execvp(gcmds[i]->ex,gcmds[i]->arg_list);
+			printf("Failed at %s\n",gcmds[i]->ex );
+			return -1;
+		default:
+			wait();
+			close(pip[1]);
+			execProc(i+1,pip[0]);
+			return 0;
+	}
 }
