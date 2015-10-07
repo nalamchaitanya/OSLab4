@@ -28,7 +28,7 @@ typedef struct proc_{
 	int nocmd;
 }proc;
 extern int* pids;
-extern Cmd** Bcmds;
+extern proc** Bcmds;
 extern int noBgs;
 //Gets the prompt of shell.
 char* getPrompt();

@@ -15,7 +15,7 @@ Cmd **gcmds;
 int gncmd;
 
 int* pids;
-Cmd** Bcmds;
+proc** Bcmds;
 int noBgs;
 
 //Gets the prompt of shell.
@@ -251,7 +251,7 @@ void* fill_proc(proc* p)
 		if(p->cmds[i]->BG==1){
 			if(p->cmds[i]->fileout==NULL){
 				char str[100];
-				sprintf(str, "%s%d.bgoutput",p->cmds[i]->ex,i);
+				sprintf(str, "output.txt",p->cmds[i]->ex,i);
 				p->cmds[i]->fileout=str;
 			}
 		}
@@ -475,7 +475,7 @@ void printBgs(){
 			printf("checking here");
 			if(!(WIFEXITED(status)==true))
              {
-    	        printCmdinfo(Bcmds[i]);
+    	        printprocinfo(Bcmds[i]);
              }
              else{
              	j=i;c=i+1;
@@ -492,7 +492,15 @@ void printBgs(){
 	}
 
 }
+void printprocinfo(proc* p){
+	int i=0;
+	while(i<p->nocmd){
+		printCmdinfo(p->cmds[i]);
+		i++;
+	}
 
+
+}
 void printCmdinfo(Cmd*cmd){
 	printf("Commandname:");
 	int j=0;

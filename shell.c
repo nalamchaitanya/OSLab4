@@ -5,7 +5,7 @@
 #include <string.h>
 #include "parse.h"
 int* pids;
-Cmd** Bcmds;
+proc** Bcmds;
 int noBgs;
 int main()
 {
