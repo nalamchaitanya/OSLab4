@@ -1,0 +1,42 @@
+ls -l;> <filename>;lsb;; > <filename>
+
+pwd     > <filename>
+
+cd-create-profile > <filename>
+
+cd randomize > <filename>
+
+firefox & > <filename>
+
+ls -a > <filename>
+
+\ls > <filename>
+
+
+
+lsb <filename>
+
+ls -l | grep Aug
+
+echo \n > <filename>
+
+ls > <filename>
+
+cd ~/Downloads/
+
+pwd > <filename>
+
+uname -a
+
+ls-a > <filename>
+
+;
+
+
+<filename> denotes a file in which all the output is redirected. Going through the file, will give a
+clear picture of your shell's correctness
+
+for getting back ground processes we have to keep all such bg processes started and when we encounter 
+command lsb we have to check in either of the following way.You can walk the pid entries in /proc
+or Check for your process in either the cmdline file or perform a readlink on the exe link
+

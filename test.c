@@ -72,29 +72,41 @@ int main()
 	// 		if(fp==NULL)
 	// 			printf("HelloWorld\n");
 	// }
+
+	// int pip[2];
+	// pipe(pip);
+	// switch (fork())
+	// {
+	// 	case -1:
+	// 		return -1;
+	// 	case 0:
+	// 		dup2(pip[1],1);
+	// 		close(pip[1]);
+	// 		FILE *stream = fdopen(1,"r");
+	// 		FILE *st = freopen("hi.txt","r",stream);
+	// 		dup2(pip[0],0);
+	// 		char* str=(char*)malloc(sizeof(char)*100);
+	// 		scanf("%s\n",str );
+	// 		close(pip[0]);
+	// 		printf("%s\n",str );
+	// 		printf("Hello\n" );
 	//
-	int pip[2];
-	pipe(pip);
-	switch (fork())
-	{
-		case -1:
-			return -1;
-		case 0:
-			close(pip[1]);
-			dup2(pip[0],0);
-			char* str=(char*)malloc(sizeof(char)*100);
-			scanf("%s\n",str );
-			close(pip[0]);
-			printf("%s\n",str );
-			printf("Hello\n" );
-			break;
-		default:
-			close(pip[0]);
-			dup2(pip[1],1);
-			close(pip[1]);
-			printf("HelloWorld\n" );
-	}
+	// 		break;
+	// 	default:
+	// 		close(pip[0]);
+	// 		dup2(pip[1],1);
+	// 		close(pip[1]);
+	// 		printf("HelloWorld\n" );
+	// }
 	//
+	//
+	int i[2];
+	pipe(i);
+	dup2(i[1],1);
+	close(i[1]);
+	printf("HelloWorld\n");
+	FILE *fp = fdopen(i[0],"r");
+	FILE *fq = freopen("hello.txt","r",fp);
 	// int i;
 	// int ncmd = prc->nocmd;
 	//
@@ -120,4 +132,5 @@ int main()
 	// 	}
 	// }
 	// return 0;
+	//
 }
