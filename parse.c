@@ -10,11 +10,15 @@
 #include <string.h>
 #include "parse.h"
 #include "stdbool.h"
-//Gets the prompt of shell.
+
+Cmd **gcmds;
+int gncmd;
+
 int* pids;
 Cmd** Bcmds;
 int noBgs;
 
+//Gets the prompt of shell.
 char* getPrompt()
 {
 	int sz =100;
@@ -51,15 +55,11 @@ int execFg(Cmd *cmd)
 			return -2;
 		case 0:
 			execvp(cmd->ex,cmd->arg_list);
-			if(cmd->fileout!=NULL)
-				close(cmd->fileout);
-			if(cmd->filein!=NULL)
-				close(cmd->filein);
 			return -1;
 		default:
 			printf("in fg\n");
 			waitpid(pid,&status,0);
-			
+
 			return 0;
 	}
 }
@@ -135,7 +135,7 @@ int readquotes(char * r){
  		i++;
  		
  	}
-
+ 	procs[i]=NULL;
  	for(j=0;j<i;j++)
 	{
  		d=procs[j]->cmds[0]->ex;
@@ -154,7 +154,7 @@ int readquotes(char * r){
 	 			strcat(c,d1);
 	 			d1=c;
 	 		}
-	 		printf("%s\n",d1);
+	 		printf("%s \n",d1);
  			if(s>=size1)
 			{
  				realloc(procs[j]->cmds,sizeof(Cmd*)*(size1+5));
@@ -182,51 +182,53 @@ void* fill_proc(proc* p)
 
 	for(i=0;i<p->nocmd;i++){
 		p->cmds[i]->BG=0;
-		d=strtok(p->cmds[i]->ex," ");
-		
+		d=strtok(p->cmds[i]->ex," \t");
+
 		re=strtok(NULL,"\n");
-		
+
 		p->cmds[i]->arg_list=(char**)malloc(sizeof(char*)*10);
 		if(d!=NULL){
 			p->cmds[i]->ex=d;
 			p->cmds[i]->arg_list[0]=d;
 		}
 
-		d=strtok(re," ");
+		d=strtok(re," \t");
 		int strindex;
 		int s=1;
 		while(d!=NULL){
 
 			if(strcmp(d,"")!=0){
 
-				
+
 				if(flag==-1 && flag1==-1)
 					yyerror(p->cmds[i]->ex,d);
-				
-				
-				if(strcmp(d,">")==0){
+
+
+				if(strcmp(d,">")==0 && (readquotes(d)==0)){
 					flag=1;
-					d=strtok(NULL," ");
+					d=strtok(NULL," \t");
 					p->cmds[i]->fileout=d;
 					flag=0;
 					flag1=-1;
-					p->nocmd=i;
-					
-				}
-				else if(strcmp(d,">>")==0){
-					flag=1;
-					d=strtok(NULL," ");
-					p->cmds[i]->fileout=d;
-					flag=0;
-					flag1=-1;
-					p->nocmd=i;
+					p->nocmd=i+1;
+					p->cmds[i]->flag=1;
 
 				}
-					
+				else if(strcmp(d,">>")==0 && (readquotes(d)==0)) {
+					flag=1;
+					d=strtok(NULL," \t");
+					p->cmds[i]->fileout=d;
+					flag=0;
+					flag1=-1;
+					p->nocmd=i+1;
+					p->cmds[i]->flag=2;
+
+				}
+
 				else if(*d=='&'){
 					p->cmds[i]->BG=1;
 					flag=-1;
-					
+
 				}
 				else{
 					if(*d=='"' && d[strlen(d)-1]=='"' && strlen(d)!=1){
@@ -239,11 +241,11 @@ void* fill_proc(proc* p)
 						d[strlen(d)-1]='\0';
 					}
 					p->cmds[i]->arg_list[s]=d;
-					
+
 					s++;
 				}
 			}
-			d=strtok(NULL," ");
+			d=strtok(NULL," \t");
 		}
 		p->cmds[i]->arg_list[s]=NULL;
 		if(p->cmds[i]->BG==1){
@@ -253,16 +255,16 @@ void* fill_proc(proc* p)
 				p->cmds[i]->fileout=str;
 			}
 		}
-		
+
 		int j=0,k,c;
 		r=p->cmds[i]->arg_list;
 		char *mybigstr;
-		
-		printf("fine till here");
+	
 		
 		while(r[j]!=NULL){
-			printf("%s\n",r[i]);
+			
 			if(strstr(r[j],"\"")!=NULL && r[j][0]=='"'){
+
 				mybigstr=malloc(sizeof(char)*100);
 				strcpy(mybigstr,(r[j]+1));
 				c=j;
@@ -274,7 +276,7 @@ void* fill_proc(proc* p)
 				}
 				k=strlen(r[c]);
 				if(r[c][k-1]=='\"'){
-					
+
 					k=strlen(r[c]);
 					r[c][k-1]='\0';
 					strcat(mybigstr," ");
@@ -294,14 +296,14 @@ void* fill_proc(proc* p)
 		r=p->cmds[i]->arg_list;
 		char *mybigfile;
 		j=0;
-		
+
 		if(p->cmds[i]->fileout==NULL){
 			while(r[j]!=NULL ){
 				if(j!=strindex){
 					if(strstr(r[j],">>")!=NULL){
-						
+
 						if(r[j][0]=='>'){
-							
+
 							p->cmds[i]->fileout=(r[j]+2);
 							c=j+1;k=j;
 							while(r[c]!=NULL){
@@ -312,6 +314,7 @@ void* fill_proc(proc* p)
 						else{
 							r[j]=strtok(r[j],">");
 							p->cmds[i]->fileout=strtok(NULL,">");
+							p->cmds[i]->flag=2;
 						}
 						break;
 					}
@@ -324,9 +327,9 @@ void* fill_proc(proc* p)
 			while(r[j]!=NULL ){
 				if(j!=strindex){
 					if(strstr(r[j],">")!=NULL){
-						
+
 						if(r[j][0]=='>'){
-							
+
 							p->cmds[i]->fileout=(r[j]+1);
 							c=j+1;k=j;
 							while(r[c]!=NULL){
@@ -337,6 +340,7 @@ void* fill_proc(proc* p)
 						else{
 							r[j]=strtok(r[j],">");
 							p->cmds[i]->fileout=strtok(NULL,">");
+							p->cmds[i]->flag=1;
 						}
 						break;
 					}
@@ -346,17 +350,17 @@ void* fill_proc(proc* p)
 		}
 		j=0;
 		while(p->cmds[i]->arg_list[j]!=NULL){
-			printf("%s\n", p->cmds[i]->arg_list[j]);
+			printf(" final print %s\n", p->cmds[i]->arg_list[j]);
 			j++;
 		}
 		if(p->cmds[i]->fileout!=NULL){
-			printf("%s\n",p->cmds[i]->fileout);
-			p->nocmd=i;
-			
+			printf("final print %s\n",p->cmds[i]->fileout);
+			p->nocmd=i+1;
+			printf("%d %d",p->nocmd,i+1);
 		}
 	}
-	
 
+	printf("Parsing Completed!!!");
 }
 
 void yyerror(char* ex,char* flag){
@@ -370,32 +374,48 @@ void yyerror(char* ex,char* flag){
 
 int execute(proc *prc)
 {
-	int pip[2];
-	int i;
-	int ncmd = prc->nocmd;
-
-	i=0;
-	while(i<ncmd)
+	
+	gcmds = prc->cmds;
+	gncmd = prc->nocmd;
+	int bgflag = prc->cmds[gncmd-1]->BG;
+	int st;
+	if(strcmp(prc->cmds[0]->ex,"cd")==0)
 	{
-		if(i<ncmd-1)
-		{
-			pipe(pip);
-			dup2(STDOUT_FILENO,pip[1]);
-			prc->cmds[i]->fileout = pip[1];
-			dup2(STDIN_FILENO,pip[0]);
-			prc->cmds[i+1]->filein = pip[0];
-		}
-		execCmd(prc->cmds[i]);
-		i++;
+		int res = chdir(prc->cmds[0]->arg_list[1]);
+		if(res==-1)
+			printf("change directory failed.\n");
+		return 0;
 	}
-	return 0;
+	else if(strcmp(prc->cmds[0]->ex,"exit")==0)
+		exit(0);
+	else if(strcmp(prc->cmds[0]->ex,"lsb")==0)
+	{
+		printBgs();
+		return 0;
+	}
+
+	if(bgflag==0)
+		return execProc(0,0);
+	else
+	{
+		int pid = fork();
+		switch (pid)
+		{
+			case -1:
+				return -2;
+			case 0:
+				st=execProc(0,0);
+				exit(0);
+			default:
+				return 0;
+		}
+	}
 }
 
 
 int execCmd(Cmd *cmd)
 {
-	printf("%s\n",cmd->ex );
-	//printf("%s\n",cmd->arg_list[1] );
+	
 	if(strcmp(cmd->ex,"cd")==0)
 	{
 		int res = chdir(cmd->arg_list[1]);
@@ -406,11 +426,44 @@ int execCmd(Cmd *cmd)
 		exit(0);
 	else if(strcmp(cmd->ex,"lsb")==0)
 		printBgs();
+	else
+		return 1;
+	return 0;
+}
 
-	else if(cmd->BG==1){
-		execBg(cmd);
+int execProc(int i,int in)
+{
+	if(i==gncmd)
+		return;
+	int pip[2];
+	if(i==0)
+		in=0;
+	pipe(pip);
+	int status = 0;
+	int pid = fork();
+	switch (pid)
+	{
+		case -1:
+			printf("Fork failed.\n");
+			return -2;
+		case 0:
+			close(pip[0]);
+			dup2(in,0);
+			close(in);
+			if(i!=gncmd-1)
+				dup2(pip[1],1);
+			close(pip[1]);
+			execvp(gcmds[i]->ex,gcmds[i]->arg_list);
+			printf("Failed at ");
+			printCmdinfo(gcmds[i]);
+			printf("\n");
+			return -1;
+		default:
+			waitpid(pid,&status,0);
+			close(pip[1]);
+			execProc(i+1,pip[0]);
+			return 0;
 	}
-	else{execFg(cmd);}
 }
 
 void printBgs(){

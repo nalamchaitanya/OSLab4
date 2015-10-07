@@ -20,6 +20,7 @@ typedef struct Cmd_{
 	int BG;			//background process flag
 	char* filein;		//file in
 	char* fileout;		//file out
+	int flag;
 }Cmd;
 
 typedef struct proc_{
