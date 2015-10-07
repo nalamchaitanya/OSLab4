@@ -4,7 +4,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include "parse.h"
-
+int* pids;
+Cmd** Bcmds;
+int noBgs;
 int main()
 {
 	char *prompt;
@@ -13,7 +15,9 @@ int main()
 	*cmd =(char*)malloc(sizeof(char)*30);
 	int *n=(int*)malloc(sizeof(int));
 	*n=10;
-
+	pids=(int*)malloc(sizeof(int)*100);
+	Bcmds=(Cmd**)malloc(sizeof(Cmd*)*100);
+	noBgs=0;
 	while(1)
 	{
 		// should be done before every loop because command may change cwd.
@@ -33,6 +37,7 @@ int main()
 			i++;
 		}
 		// TODO do the processing of the input and exec the code.
+
 	}
 	return 0;
 }
