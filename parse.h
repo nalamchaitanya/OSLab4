@@ -42,7 +42,7 @@ proc** parsecmd(char * cmd);
 
 void* fill_proc(proc* p);
 
-void yyerror(char* ex,char* flag);
+void yyerror(char* ex);
 
 int execute(proc *prc);
 

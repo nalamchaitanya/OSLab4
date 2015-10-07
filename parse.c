@@ -179,7 +179,7 @@ void* fill_proc(proc* p)
 	char*d,*re;
 	int flag=2,flag1=0;
 	char** r;
-
+	int errorf=-1;
 	for(i=0;i<p->nocmd;i++){
 		p->cmds[i]->BG=0;
 		d=strtok(p->cmds[i]->ex," \t");
@@ -201,7 +201,7 @@ void* fill_proc(proc* p)
 
 
 				if(flag==-1 && flag1==-1)
-					yyerror(p->cmds[i]->ex,d);
+					yyerror(p->cmds[i]->ex);
 
 
 				if(strcmp(d,">")==0 && (readquotes(d)==0)){
@@ -228,7 +228,7 @@ void* fill_proc(proc* p)
 				else if(*d=='&'){
 					p->cmds[i]->BG=1;
 					flag=-1;
-
+					errorf=i;
 				}
 				else{
 					if(*d=='"' && d[strlen(d)-1]=='"' && strlen(d)!=1){
@@ -248,18 +248,19 @@ void* fill_proc(proc* p)
 			d=strtok(NULL," \t");
 		}
 		p->cmds[i]->arg_list[s]=NULL;
+		
 		if(p->cmds[i]->BG==1){
 			if(p->cmds[i]->fileout==NULL){
 				char str[100];
-				sprintf(str, "output.txt",p->cmds[i]->ex,i);
-				p->cmds[i]->fileout=str;
+				
+				p->cmds[i]->fileout="output.txt";
 			}
 		}
 
 		int j=0,k,c;
 		r=p->cmds[i]->arg_list;
 		char *mybigstr;
-	
+		
 		
 		while(r[j]!=NULL){
 			
@@ -356,18 +357,20 @@ void* fill_proc(proc* p)
 		if(p->cmds[i]->fileout!=NULL){
 			printf("final print %s\n",p->cmds[i]->fileout);
 			p->nocmd=i+1;
-			printf("%d %d",p->nocmd,i+1);
+
+			printf("%d %d %d",p->nocmd,i+1,errorf);
 		}
 	}
 
+	if(errorf!=p->nocmd-1){
+		yyerror(p->cmds[errorf]);
+	}
 	printf("Parsing Completed!!!");
 }
 
-void yyerror(char* ex,char* flag){
-	printf("%s",ex);
-	if(flag!=NULL){
-		printf(" -%s",flag);
-	}
+void yyerror(char* ex){
+	printf("Error in %s:",ex);
+	
 	printf("command not found\n");
 
 }
@@ -413,7 +416,7 @@ int execute(proc *prc)
 				st=execProc(0,0);
 				exit(0);
 			default:
-				Bcmds[noBgs]=prc->cmds[0];
+				Bcmds[noBgs]=prc;
 				pids[noBgs]=pid;
 				noBgs++;
 				return 0;
@@ -497,6 +500,7 @@ void printBgs(){
 	int status=0;
 	int j,c;
 	int i=0;
+	
 	while(i<noBgs){
 		if(waitpid(pids[noBgs],&status,WNOHANG)){
 			printf("checking here");
@@ -505,6 +509,7 @@ void printBgs(){
     	        printprocinfo(Bcmds[i]);
              }
              else{
+             	
              	j=i;c=i+1;
              	while(Bcmds[c]!=NULL){
              		Bcmds[j]=Bcmds[c];
