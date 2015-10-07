@@ -20,6 +20,7 @@ typedef struct Cmd_{
 	int BG;			//background process flag
 	char* filein;		//file in
 	char* fileout;		//file out
+	int flag;
 }Cmd;
 
 typedef struct proc_{
@@ -52,5 +53,7 @@ int execProc(int i,int in);
 void printBgs();
 
 void printCmdinfo(Cmd*cmd);
+
+int readquotes(char * r);
 
 #endif
