@@ -37,14 +37,18 @@ char* getPrompt()
 
 
 //Executes in the background.
-int execFg(char *ex,char **args)
+int execFg(Cmd *cmd)
 {
 	switch (fork())
 	{
 		case -1:
 			return -2;
 		case 0:
-			execvp(ex,args);
+			execvp(cmd->ex,cmd->arg_list);
+			if(cmd->fileout!=NULL)
+				close(cmd->fileout);
+			if(cmd->filein!=NULL)
+				close(cmd->filein);
 			return -1;
 		default:
 			wait();
@@ -207,29 +211,41 @@ yyerror(char* ex,char* flag){
 int execute(proc *prc)
 {
 	int pip[2];
-
+	int i;
 	int ncmd = prc->nocmd;
 
-	while(ncmd>0)
+	i=0;
+	while(i<ncmd)
 	{
-		pipe(pip);
-		if(strcmp(prc->cmds[ncmd-1]->ex,"ls")==0)
-			execFg(prc->cmds[0]->ex,prc->cmds[0]->arg_list);
-		else if(strcmp(prc->cmds[ncmd-1]->ex,"grep")==0)
-			execFg(prc->cmds[0]->ex,prc->cmds[0]->arg_list);
-		else if(strcmp(prc->cmds[ncmd-1]->ex,"pwd")==0)
-			execFg(prc->cmds[0]->ex,prc->cmds[0]->arg_list);
-		else if(strcmp(prc->cmds[ncmd-1]->ex,"cd")==0)
+		if(i<ncmd-1)
 		{
-			int res = chdir(prc->cmds[ncmd-1]->arg_list[1]);
-			if(res==-1)
-				printf("change directory failed.\n");
+			pipe(pip);
+			dup2(STDOUT_FILENO,pip[1]);
+			prc->cmds[i]->fileout = pip[1];
+			dup2(STDIN_FILENO,pip[0]);
+			prc->cmds[i+1]->filein = pip[0];
 		}
-		else if(strcmp(prc->cmds[ncmd-1]->ex,"exit")==0)
-			exit(0);
-		else if(strcmp(prc->cmds[ncmd-1]->ex,"lsb")==0)
-			printf("we'll do it.\n");
-		ncmd--;
+		execCmd(prc->cmds[i]);
+		i++;
 	}
 	return 0;
+}
+
+
+int execCmd(Cmd *cmd)
+{
+	printf("%s\n",cmd->ex );
+	//printf("%s\n",cmd->arg_list[1] );
+	if(strcmp(cmd->ex,"cd")==0)
+	{
+		int res = chdir(cmd->arg_list[1]);
+		if(res==-1)
+			printf("change directory failed.\n");
+	}
+	else if(strcmp(cmd->ex,"exit")==0)
+		exit(0);
+	else if(strcmp(cmd->ex,"lsb")==0)
+		printf("we'll do it.\n");
+	else
+		execFg(cmd);
 }

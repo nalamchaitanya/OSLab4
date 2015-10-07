@@ -65,9 +65,9 @@ int main()
 			puts(*get);
 
 			int fid;
-			dup2(1,2);
-			char *dup=(char*)malloc(sizeof(char)*100);
-			read(2,(void*)dup,100);
-			printf("%s\n",dup );
+			dup2(1,3);
+			char *du=(char*)malloc(sizeof(char)*100);
+			read(3,(void*)du,100);
+			printf("%s\n",du );
 	}
 }

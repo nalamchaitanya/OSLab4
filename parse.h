@@ -31,7 +31,7 @@ typedef struct proc_{
 char* getPrompt();
 
 //Executes in the background.
-int execFg(char *ex,char **args);
+int execFg(Cmd *cmd);
 
 proc** parsecmd(char * cmd);
 
