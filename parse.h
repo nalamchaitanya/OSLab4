@@ -38,5 +38,8 @@ int execBg(Cmd *cmd);
 proc** parsecmd(char * cmd);
 
 void* fill_proc(proc* p);
-
+void printCmdinfo(Cmd*cmd);
+void printBgs();
+int readquotes(char * r);
+void yyerror(char* ex,char* flag);
 #endif
