@@ -37,7 +37,7 @@ char* getPrompt()
 
 
 //Executes in the background.
-int execBg(char *ex,char **args)
+int execFg(char *ex,char **args)
 {
 	switch (fork())
 	{
@@ -52,8 +52,24 @@ int execBg(char *ex,char **args)
 	}
 }
 
+//Executes in the background.
+int execBg(char *ex,char **args)
+{
+	switch (fork())
+	{
+		case -1:
+			return -2;
+		case 0:
+			execvp(ex,args);
+			return -1;
+		default:
+			return 0;
+	}
+}
+
  proc** parsecmd(char * cmd)
  {
+	cmd=strndup(cmd,strlen(cmd)-1);
  	int i=0;
  	proc** procs=(proc**)malloc(sizeof(proc*)*10);
  	int size=10;
@@ -227,6 +243,26 @@ int execute(proc *prc)
 
 	int ncmd = prc->nocmd;
 
-	execBg(prc->cmds[0]->ex,prc->cmds[0]->arg_list);
+	while(ncmd>0)
+	{
+		pipe(pip);
+		if(strcmp(prc->cmds[ncmd-1]->ex,"ls")==0)
+			execFg(prc->cmds[0]->ex,prc->cmds[0]->arg_list);
+		else if(strcmp(prc->cmds[ncmd-1]->ex,"grep")==0)
+			execFg(prc->cmds[0]->ex,prc->cmds[0]->arg_list);
+		else if(strcmp(prc->cmds[ncmd-1]->ex,"pwd")==0)
+			execFg(prc->cmds[0]->ex,prc->cmds[0]->arg_list);
+		else if(strcmp(prc->cmds[ncmd-1]->ex,"cd")==0)
+		{
+			int res = chdir(prc->cmds[ncmd-1]->arg_list[1]);
+			if(res==-1)
+				printf("change directory failed.\n");
+		}
+		else if(strcmp(prc->cmds[ncmd-1]->ex,"exit")==0)
+			exit(0);
+		else if(strcmp(prc->cmds[ncmd-1]->ex,"lsb")==0)
+			printf("we'll do it.\n");
+		ncmd--;
+	}
 	return 0;
 }
