@@ -25,7 +25,7 @@ int main()
 		proc** p=parsecmd(s);
 		//printf("%d\n",p[0]->nocmd);
 		//printf("%s\n",p[0]->cmds[0]->arg_list[0]);
-		break;
+		//break;
 	}
 	return 0;
 }

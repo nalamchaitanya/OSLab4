@@ -85,11 +85,13 @@ void* fill_proc(proc* p){
 	int i;
 	char*d,*re;
 	int flag=2,flag1=0;
-	char* r;
+	char** r;
 	for(i=0;i<p->nocmd;i++){
 		p->cmds[i]->BG=0;
 		d=strtok(p->cmds[i]->ex," ");
-		re=strtok(NULL,"");
+		
+		re=strtok(NULL,"\n");
+		
 		p->cmds[i]->arg_list=(char**)malloc(sizeof(char*)*10);
 		if(d!=NULL){
 			p->cmds[i]->ex=d;
@@ -97,52 +99,57 @@ void* fill_proc(proc* p){
 		}
 		
 		d=strtok(re," \n");
-
+		int strindex;
 		int s=1;
 		while(d!=NULL){
 			
 			if(strcmp(d,"")!=0){
 				
-				
 				if(flag==-1 && flag1==-1)
 					yyerror(p->cmds[i]->ex,d);
 				
-				if(*d=='>'){
-					if(strcmp(d,">")==0){
-						flag=1;
-						d=strtok(NULL,"> ");
-						p->cmds[i]->fileout=d;
-						flag=0;
-						flag1=-1;
-						printf("%s \n",p->cmds[i]->fileout);
-					}
-					else {
-						
-						p->cmds[i]->fileout=(++d);
-						flag=0;
-						flag1=-1;
-						printf("%s \n",p->cmds[i]->fileout);
+				
+				if(strcmp(d,">")==0){
+					flag=1;
+					d=strtok(NULL," ");
+					p->cmds[i]->fileout=d;
+					flag=0;
+					flag1=-1;
 					
-					}
 				}
+				else if(strcmp(d,">>")==0){
+					flag=1;
+					d=strtok(NULL," ");
+					p->cmds[i]->fileout=d;
+					flag=0;
+					flag1=-1;
+					
+				}
+					
 				else if(*d=='&'){
 					p->cmds[i]->BG=1;
 					flag=-1;
-					printf("flag set\n");
+					
 				}
 				else{
 					if(*d=='"' && d[strlen(d)-1]=='"'){
 						d=d+1;
 						d[strlen(d)-1]='\0';
+						strindex=s;
+					}
+					else if(*d=='\'' && d[strlen(d)-1]=='\''){
+						d=d+1;
+						d[strlen(d)-1]='\0';
 					}
 					p->cmds[i]->arg_list[s]=d;
-					printf("%s\n",p->cmds[i]->arg_list[s]);
+					
 					s++;
 				}
 				
 			}
 			d=strtok(NULL," \n");
 		}
+		p->cmds[i]->arg_list[s]=NULL;
 		if(p->cmds[i]->BG==1){
 			if(p->cmds[i]->fileout==NULL){
 				char str[100];
@@ -150,7 +157,105 @@ void* fill_proc(proc* p){
 				p->cmds[i]->fileout=str;
 			}
 		}
+		
+		int j=0,k,c;
+		r=p->cmds[i]->arg_list;
+		char *mybigstr;
+		
+		
+		while(r[j]!=NULL){
+		
+			if(strstr(r[j],"\"")!=NULL){
+				mybigstr=malloc(sizeof(char)*100);
+				strcpy(mybigstr,(r[j]+1));
+				c=j;
+				c++;
+				while(strstr(r[c],"\"")==NULL){
+					strcat(mybigstr," ");
+					strcat(mybigstr,r[c]);
+					c++;
+				}
+				k=strlen(r[c]);
+				if(r[c][k-1]=='\"'){
+					
+					k=strlen(r[c]);
+					r[c][k-1]='\0';
+					strcat(mybigstr," ");
+					strcat(mybigstr,r[c]);
+				}
+				r[j]=mybigstr;
+				strindex=j;
+				k=j+1;c++;
+				while(r[c]!=NULL){
+					r[k]=r[c];k++;c++;
+				}
+				r[k]=NULL;
+			}
+			j++;
+		}
+		r=p->cmds[i]->arg_list;
+		char *mybigfile;
+		j=0;
+		
+		if(p->cmds[i]->fileout==NULL){
+			while(r[j]!=NULL ){
+				if(j!=strindex){
+					if(strstr(r[j],">>")!=NULL){
+						
+						if(r[j][0]=='>'){
+							
+							p->cmds[i]->fileout=(r[j]+2);
+							c=j+1;k=j;
+							while(r[c]!=NULL){
+								r[k]=r[c];k++;c++;
+							}
+							r[k]=NULL;
+						}
+						else{
+							r[j]=strtok(r[j],">");
+							p->cmds[i]->fileout=strtok(NULL,">");
+						}
+						break;
+					}
+				}
+				j++;
+			}
+		}
+		j=0;
+		if(p->cmds[i]->fileout==NULL){
+			while(r[j]!=NULL ){
+				if(j!=strindex){
+					if(strstr(r[j],">")!=NULL){
+						
+						if(r[j][0]=='>'){
+							
+							p->cmds[i]->fileout=(r[j]+1);
+							c=j+1;k=j;
+							while(r[c]!=NULL){
+								r[k]=r[c];k++;c++;
+							}
+							r[k]=NULL;
+						}
+						else{
+							r[j]=strtok(r[j],">");
+							p->cmds[i]->fileout=strtok(NULL,">");
+						}
+						break;
+					}
+				}
+				j++;
+			}
+		}
+		j=0;
+		while(p->cmds[i]->arg_list[j]!=NULL){
+			printf("%s\n", p->cmds[i]->arg_list[j]);
+			j++;
+		}
+		if(p->cmds[i]->fileout!=NULL){
+			printf("%s\n",p->cmds[i]->fileout);
+		}
 	}
+	
 
 }
 
