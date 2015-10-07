@@ -4,9 +4,11 @@
 #include <stdlib.h>
 #include <string.h>
 #include "parse.h"
+
 int* pids;
 proc** Bcmds;
 int noBgs;
+
 int main()
 {
 	char *prompt;

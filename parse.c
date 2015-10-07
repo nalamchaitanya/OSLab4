@@ -377,6 +377,8 @@ int execute(proc *prc)
 	
 	gcmds = prc->cmds;
 	gncmd = prc->nocmd;
+	if(gncmd==0)
+		return 0;
 	int bgflag = prc->cmds[gncmd-1]->BG;
 	int st;
 	if(strcmp(prc->cmds[0]->ex,"cd")==0)
@@ -386,10 +388,14 @@ int execute(proc *prc)
 			printf("change directory failed.\n");
 		return 0;
 	}
+	else if(strcmp(prc->cmds[0]->ex,"help")==0)
+		printf("exit and ask my parent.\n");
 	else if(strcmp(prc->cmds[0]->ex,"exit")==0)
 		exit(0);
 	else if(strcmp(prc->cmds[0]->ex,"lsb")==0)
 	{
+		// printf("in bgs\n" );
+		printf("%s %d\n",prc->cmds[0]->ex,noBgs );
 		printBgs();
 		return 0;
 	}
@@ -407,6 +413,9 @@ int execute(proc *prc)
 				st=execProc(0,0);
 				exit(0);
 			default:
+				Bcmds[noBgs]=prc->cmds[0];
+				pids[noBgs]=pid;
+				noBgs++;
 				return 0;
 		}
 	}
@@ -422,6 +431,8 @@ int execCmd(Cmd *cmd)
 		if(res==-1)
 			printf("change directory failed.\n");
 	}
+	else if(strcmp(cmd->ex,"help")==0)
+		printf("exit and ask my parent.\n");
 	else if(strcmp(cmd->ex,"exit")==0)
 		exit(0);
 	else if(strcmp(cmd->ex,"lsb")==0)
@@ -451,7 +462,23 @@ int execProc(int i,int in)
 			dup2(in,0);
 			close(in);
 			if(i!=gncmd-1)
+			{
 				dup2(pip[1],1);
+			}
+			else
+			{
+				if(gcmds[i]->fileout!=NULL)
+				{
+					char *mode = "w";
+					// if(gcmds[i]->flag==1)
+					// 	*mode = 'w';
+					// else if(gcmds[i]->flag==2)
+					// 	*mode = 'a';
+					FILE *fd = fopen(gcmds[i]->fileout,mode);
+					int f = fileno(fd);
+					dup2(f,1);
+				}
+			}
 			close(pip[1]);
 			execvp(gcmds[i]->ex,gcmds[i]->arg_list);
 			printf("Failed at ");

@@ -35,12 +35,25 @@ char* getPrompt();
 
 //Executes in the background.
 int execFg(Cmd *cmd);
+
 int execBg(Cmd *cmd);
+
 proc** parsecmd(char * cmd);
 
 void* fill_proc(proc* p);
-void printCmdinfo(Cmd*cmd);
-void printBgs();
-int readquotes(char * r);
+
 void yyerror(char* ex,char* flag);
+
+int execute(proc *prc);
+
+int execCmd(Cmd *cmd);
+
+int execProc(int i,int in);
+
+void printBgs();
+
+void printCmdinfo(Cmd*cmd);
+
+int readquotes(char * r);
+
 #endif
