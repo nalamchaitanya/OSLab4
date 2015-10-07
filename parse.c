@@ -212,14 +212,44 @@ int execute(proc *prc)
 	gcmds = prc->cmds;
 	gncmd = prc->nocmd;
 	int bgflag = prc->cmds[gncmd-1]->BG;
-	execProc(0,0);
+	int st;
+	if(strcmp(prc->cmds[0]->ex,"cd")==0)
+	{
+		int res = chdir(prc->cmds[0]->arg_list[1]);
+		if(res==-1)
+			printf("change directory failed.\n");
+		return 0;
+	}
+	else if(strcmp(prc->cmds[0]->ex,"exit")==0)
+		exit(0);
+	else if(strcmp(prc->cmds[0]->ex,"lsb")==0)
+	{
+		printf("we'll do it.\n");
+		return 0;
+	}
+
+	if(bgflag==0)
+		return execProc(0,0);
+	else
+	{
+		int pid = fork();
+		switch (pid)
+		{
+			case -1:
+				return -2;
+			case 0:
+				st=execProc(0,0);
+				exit(0);
+			default:
+				return 0;
+		}
+	}
 }
 
 
 int execCmd(Cmd *cmd)
 {
 	printf("%s\n",cmd->ex );
-	//printf("%s\n",cmd->arg_list[1] );
 	if(strcmp(cmd->ex,"cd")==0)
 	{
 		int res = chdir(cmd->arg_list[1]);
@@ -231,7 +261,8 @@ int execCmd(Cmd *cmd)
 	else if(strcmp(cmd->ex,"lsb")==0)
 		printf("we'll do it.\n");
 	else
-		execFg(cmd);
+		return 1;
+	return 0;
 }
 
 int execProc(int i,int in)
@@ -242,6 +273,7 @@ int execProc(int i,int in)
 	if(i==0)
 		in=0;
 	pipe(pip);
+	int status = 0;
 	int pid = fork();
 	switch (pid)
 	{
@@ -259,7 +291,7 @@ int execProc(int i,int in)
 			printf("Failed at %s\n",gcmds[i]->ex );
 			return -1;
 		default:
-			wait();
+			waitpid(pid,&status,0);
 			close(pip[1]);
 			execProc(i+1,pip[0]);
 			return 0;
