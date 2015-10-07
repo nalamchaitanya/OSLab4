@@ -9,12 +9,17 @@
 #include <stdlib.h>
 #include <string.h>
 #include "parse.h"
-
+#include "stdbool.h"
 //Gets the prompt of shell.
+int* pids;
+Cmd** Bcmds;
+int noBgs;
+
 char* getPrompt()
 {
 	int sz =100;
 	char *prompt = (char*)malloc(sizeof(char)*sz);
+	*prompt='\0';
 	strcat(prompt,getlogin());
 	strcat(prompt,"@[");
 	char *buf=(char*)malloc(sizeof(char)*sz);
@@ -32,18 +37,67 @@ char* getPrompt()
 	strcat(prompt,buf);
 	strcat(prompt,"]");
 	return prompt;
- }
+}
 
- proc** parsecmd(char * cmd){
+
+//Executes in the background.
+int execFg(Cmd *cmd)
+{
+	int status=0;
+	int pid=fork();
+	switch (pid)
+	{
+		case -1:
+			return -2;
+		case 0:
+			execvp(cmd->ex,cmd->arg_list);
+			if(cmd->fileout!=NULL)
+				close(cmd->fileout);
+			if(cmd->filein!=NULL)
+				close(cmd->filein);
+			return -1;
+		default:
+			printf("in fg\n");
+			waitpid(pid,&status,0);
+			
+			return 0;
+	}
+}
+
+//Executes in the background.
+int execBg(Cmd *cmd)
+{
+	int pid=fork();
+	switch (pid)
+	{
+		case -1:
+			return -2;
+		case 0:
+			execvp(cmd->ex,cmd->arg_list);
+			return -1;
+		default:
+			printf("came here bg\n");
+			Bcmds[noBgs]=cmd;
+			pids[noBgs]=pid;
+			noBgs++;
+			return 0;
+	}
+}
+
+ proc** parsecmd(char * cmd)
+ {
+	cmd=strndup(cmd,strlen(cmd)-1);
  	int i=0;
  	proc** procs=(proc**)malloc(sizeof(proc*)*10);
  	int size=10;
  	int size1;
  	char* d=strtok(cmd,";");
  	char* d1;int j;
- 	while(d!=NULL){
+ 	while(d!=NULL)
+	{
  	//	printf("%s\n",d);
- 		if(i>=size){
+ 		if(i>=size)
+		{
  			realloc(procs,sizeof(proc*)*(size+5));
  			size=size+5;
  		}
@@ -53,18 +107,21 @@ char* getPrompt()
  		procs[i]->cmds[0]->ex=d;
  		d=strtok(NULL,";");
  		i++;
- 			
  	}
- 	for(j=0;j<i;j++){
- 		char* d=procs[j]->cmds[0]->ex;
+
+ 	for(j=0;j<i;j++)
+	{
+ 		d=procs[j]->cmds[0]->ex;
  		size1=10;
  		char* c=(char*)malloc(sizeof(char)*strlen(d));
  		strcpy(c,d);
  		d1=strtok(c,"|");
  		int s=0;
- 		while(d1!=NULL){
- 	//		printf("%s\n",d1);
- 			if(s>=size1){
+ 		while(d1!=NULL)
+		{
+
+ 			if(s>=size1)
+			{
  				realloc(procs[j]->cmds,sizeof(Cmd*)*(size1+5));
  				size1=size1+5;
  			}
@@ -81,11 +138,13 @@ char* getPrompt()
  	return procs;
  }
 
-void* fill_proc(proc* p){
+void* fill_proc(proc* p)
+{
 	int i;
 	char*d,*re;
 	int flag=2,flag1=0;
 	char** r;
+
 	for(i=0;i<p->nocmd;i++){
 		p->cmds[i]->BG=0;
 		d=strtok(p->cmds[i]->ex," ");
@@ -97,13 +156,14 @@ void* fill_proc(proc* p){
 			p->cmds[i]->ex=d;
 			p->cmds[i]->arg_list[0]=d;
 		}
-		
+
 		d=strtok(re," \n");
 		int strindex;
 		int s=1;
 		while(d!=NULL){
-			
+
 			if(strcmp(d,"")!=0){
+
 				
 				if(flag==-1 && flag1==-1)
 					yyerror(p->cmds[i]->ex,d);
@@ -124,6 +184,7 @@ void* fill_proc(proc* p){
 					flag=0;
 					flag1=-1;
 					
+
 				}
 					
 				else if(*d=='&'){
@@ -145,7 +206,6 @@ void* fill_proc(proc* p){
 					
 					s++;
 				}
-				
 			}
 			d=strtok(NULL," \n");
 		}
@@ -266,4 +326,91 @@ yyerror(char* ex,char* flag){
 	}
 	printf("command not found\n");
 
+}
+
+int execute(proc *prc)
+{
+	int pip[2];
+	int i;
+	int ncmd = prc->nocmd;
+
+	i=0;
+	while(i<ncmd)
+	{
+		if(i<ncmd-1)
+		{
+			pipe(pip);
+			dup2(STDOUT_FILENO,pip[1]);
+			prc->cmds[i]->fileout = pip[1];
+			dup2(STDIN_FILENO,pip[0]);
+			prc->cmds[i+1]->filein = pip[0];
+		}
+		execCmd(prc->cmds[i]);
+		i++;
+	}
+	return 0;
+}
+
+
+int execCmd(Cmd *cmd)
+{
+	printf("%s\n",cmd->ex );
+	//printf("%s\n",cmd->arg_list[1] );
+	if(strcmp(cmd->ex,"cd")==0)
+	{
+		int res = chdir(cmd->arg_list[1]);
+		if(res==-1)
+			printf("change directory failed.\n");
+	}
+	else if(strcmp(cmd->ex,"exit")==0)
+		exit(0);
+	else if(strcmp(cmd->ex,"lsb")==0)
+		printBgs();
+
+	else if(cmd->BG==1){
+		execBg(cmd);
+	}
+	else{execFg(cmd);}
+}
+
+void printBgs(){
+	int status=0;
+	int j,c;
+	int i=0;
+	while(i<noBgs){
+		if(waitpid(pids[noBgs],&status,WNOHANG)){
+			printf("checking here");
+			if(!(WIFEXITED(status)==true))
+             {
+    	        printCmdinfo(Bcmds[i]);
+             }
+             else{
+             	j=i;c=i+1;
+             	while(Bcmds[c]!=NULL){
+             		Bcmds[j]=Bcmds[c];
+             		pids[j]=pids[c];
+             		j++;c++;
+             	}
+             	Bcmds[j]=NULL;
+             	noBgs--;
+             }
+		}
+		i++;
+	}
+
+}
+
+printCmdinfo(Cmd*cmd){
+	printf("Commandname:");
+	int j=0;
+	while(cmd->arg_list[j]!=NULL){
+		printf("%s ",cmd->arg_list[j]);
+		j++;
+	}
+	if(cmd->fileout!=NULL)
+		printf("%s",cmd->fileout);
+	if(cmd->BG==1){
+		printf(" &");
+	}
+	printf("\n");
 }
