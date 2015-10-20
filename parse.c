@@ -397,10 +397,10 @@ int execute(proc *prc)
 		exit(0);
 	else if(strcmp(prc->cmds[0]->ex,"lsb")==0)
 	{
-		// printf("in bgs\n" );
+		//printf("in bgs\n" );
 		//The New Code comes here:
-		createlsb();
-		//printBgs();
+		//createlsb();
+		printBgs();
 		return 0;
 	}
 
@@ -510,15 +510,15 @@ int execProc(int i,int in)
 
 
 //functions printBgs,printcmdinfo,print procinfo.
-/*
+
 void printBgs(){
 	int status=0;
 	int j,c;
 	int i=0;
 	while(i<noBgs){
-		printprocinfo(Bcmds[i]);
 
-		if(waitpid(pids[noBgs],&status,WNOHANG)){
+		printprocinfo(Bcmds[i]);
+		if(waitpid(pids[i],&status,WNOHANG)){
 			printf("checking here");
 			if(!(WIFEXITED(status)==true))
              {
@@ -532,7 +532,8 @@ void printBgs(){
              		j++;c++;
              	}
              	Bcmds[j]=NULL;
-             	noBgs--;i--;
+             	noBgs--;
+				i--;
              	printf("hello\n");
              }
 		}
@@ -551,7 +552,7 @@ void printprocinfo(proc* p){
 
 }
 
-*/
+
 void printCmdinfo(Cmd*cmd){
 	printf("Commandname:");
 	int j=0;

@@ -57,4 +57,7 @@ void printCmdinfo(Cmd*cmd);
 int readquotes(char * r);
 
 char* createlsb();
+
+void printprocinfo(proc *p);
+
 #endif
