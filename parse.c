@@ -15,7 +15,7 @@ Cmd **gcmds;
 int gncmd;
 
 int* pids;
-Cmd** Bcmds;
+proc** Bcmds;
 int noBgs;
 
 //Gets the prompt of shell.
@@ -45,7 +45,7 @@ char* getPrompt()
 
 
 //Executes in the background.
-int execFg(Cmd *cmd)
+/*int execFg(Cmd *cmd)
 {
 	int status=0;
 	int pid=fork();
@@ -62,10 +62,10 @@ int execFg(Cmd *cmd)
 
 			return 0;
 	}
-}
+}*/
 
 //Executes in the background.
-int execBg(Cmd *cmd)
+/*int execBg(Cmd *cmd)
 {
 	int pid=fork();
 	switch (pid)
@@ -82,7 +82,7 @@ int execBg(Cmd *cmd)
 			noBgs++;
 			return 0;
 	}
-}
+}*/
 ////////////////////Parser function////////////////////////////
 int readquotes(char * r){
 	int len=strlen(r);
@@ -120,7 +120,7 @@ int readquotes(char * r){
  			strcat(c,d);
  			d=c;
  		}
- 		printf("%s\n",d);
+
  		if(i>=size)
 		{
  			realloc(procs,sizeof(proc*)*(size+5));
@@ -133,7 +133,7 @@ int readquotes(char * r){
  		d=strtok(NULL,";");
 
  		i++;
- 		
+
  	}
  	procs[i]=NULL;
  	for(j=0;j<i;j++)
@@ -154,7 +154,7 @@ int readquotes(char * r){
 	 			strcat(c,d1);
 	 			d1=c;
 	 		}
-	 		printf("%s \n",d1);
+
  			if(s>=size1)
 			{
  				realloc(procs[j]->cmds,sizeof(Cmd*)*(size1+5));
@@ -251,18 +251,18 @@ void* fill_proc(proc* p)
 		if(p->cmds[i]->BG==1){
 			if(p->cmds[i]->fileout==NULL){
 				char str[100];
-				sprintf(str, "%s%d.bgoutput",p->cmds[i]->ex,i);
-				p->cmds[i]->fileout=str;
+				//sprintf(str, "output.txt",p->cmds[i]->ex,i);
+				p->cmds[i]->fileout="output.txt";
 			}
 		}
 
 		int j=0,k,c;
 		r=p->cmds[i]->arg_list;
 		char *mybigstr;
-	
-		
+
+
 		while(r[j]!=NULL){
-			
+
 			if(strstr(r[j],"\"")!=NULL && r[j][0]=='"'){
 
 				mybigstr=malloc(sizeof(char)*100);
@@ -305,6 +305,7 @@ void* fill_proc(proc* p)
 						if(r[j][0]=='>'){
 
 							p->cmds[i]->fileout=(r[j]+2);
+							p->cmds[i]->flag=2;
 							c=j+1;k=j;
 							while(r[c]!=NULL){
 								r[k]=r[c];k++;c++;
@@ -331,6 +332,7 @@ void* fill_proc(proc* p)
 						if(r[j][0]=='>'){
 
 							p->cmds[i]->fileout=(r[j]+1);
+							p->cmds[i]->flag=1;
 							c=j+1;k=j;
 							while(r[c]!=NULL){
 								r[k]=r[c];k++;c++;
@@ -349,6 +351,7 @@ void* fill_proc(proc* p)
 			}
 		}
 		j=0;
+		/*
 		while(p->cmds[i]->arg_list[j]!=NULL){
 			printf(" final print %s\n", p->cmds[i]->arg_list[j]);
 			j++;
@@ -357,10 +360,10 @@ void* fill_proc(proc* p)
 			printf("final print %s\n",p->cmds[i]->fileout);
 			p->nocmd=i+1;
 			printf("%d %d",p->nocmd,i+1);
-		}
+		}*/
 	}
 
-	printf("Parsing Completed!!!");
+
 }
 
 void yyerror(char* ex,char* flag){
@@ -374,7 +377,7 @@ void yyerror(char* ex,char* flag){
 
 int execute(proc *prc)
 {
-	
+
 	gcmds = prc->cmds;
 	gncmd = prc->nocmd;
 	if(gncmd==0)
@@ -395,8 +398,9 @@ int execute(proc *prc)
 	else if(strcmp(prc->cmds[0]->ex,"lsb")==0)
 	{
 		// printf("in bgs\n" );
-		printf("%s %d\n",prc->cmds[0]->ex,noBgs );
-		printBgs();
+		//The New Code comes here:
+		createlsb();
+		//printBgs();
 		return 0;
 	}
 
@@ -413,7 +417,7 @@ int execute(proc *prc)
 				st=execProc(0,0);
 				exit(0);
 			default:
-				Bcmds[noBgs]=prc->cmds[0];
+				Bcmds[noBgs]=prc;
 				pids[noBgs]=pid;
 				noBgs++;
 				return 0;
@@ -424,7 +428,7 @@ int execute(proc *prc)
 
 int execCmd(Cmd *cmd)
 {
-	
+
 	if(strcmp(cmd->ex,"cd")==0)
 	{
 		int res = chdir(cmd->arg_list[1]);
@@ -435,8 +439,14 @@ int execCmd(Cmd *cmd)
 		printf("exit and ask my parent.\n");
 	else if(strcmp(cmd->ex,"exit")==0)
 		exit(0);
-	else if(strcmp(cmd->ex,"lsb")==0)
-		printBgs();
+	else if(strcmp(cmd->ex,"lsb")==0){
+
+		//The New Code comes here:
+		createlsb();
+		//printBgs();
+		return 0;
+	}
+
 	else
 		return 1;
 	return 0;
@@ -459,8 +469,11 @@ int execProc(int i,int in)
 			return -2;
 		case 0:
 			close(pip[0]);
-			dup2(in,0);
-			close(in);
+			if(i!=0){
+				dup2(in,0);
+				close(in);
+			}
+
 			if(i!=gncmd-1)
 			{
 				dup2(pip[1],1);
@@ -470,10 +483,12 @@ int execProc(int i,int in)
 				if(gcmds[i]->fileout!=NULL)
 				{
 					char *mode = "w";
-					// if(gcmds[i]->flag==1)
-					// 	*mode = 'w';
-					// else if(gcmds[i]->flag==2)
-					// 	*mode = 'a';
+					if(gcmds[i]->flag==1)
+					 	mode = "w";
+					else if(gcmds[i]->flag==2)
+					 	mode = "a";
+
+
 					FILE *fd = fopen(gcmds[i]->fileout,mode);
 					int f = fileno(fd);
 					dup2(f,1);
@@ -493,16 +508,21 @@ int execProc(int i,int in)
 	}
 }
 
+
+//functions printBgs,printcmdinfo,print procinfo.
+/*
 void printBgs(){
 	int status=0;
 	int j,c;
 	int i=0;
 	while(i<noBgs){
+		printprocinfo(Bcmds[i]);
+
 		if(waitpid(pids[noBgs],&status,WNOHANG)){
 			printf("checking here");
 			if(!(WIFEXITED(status)==true))
              {
-    	        printCmdinfo(Bcmds[i]);
+    				printprocinfo(Bcmds[i]);
              }
              else{
              	j=i;c=i+1;
@@ -512,7 +532,8 @@ void printBgs(){
              		j++;c++;
              	}
              	Bcmds[j]=NULL;
-             	noBgs--;
+             	noBgs--;i--;
+             	printf("hello\n");
              }
 		}
 		i++;
@@ -520,6 +541,17 @@ void printBgs(){
 
 }
 
+void printprocinfo(proc* p){
+	int i=0;
+	while(i<p->nocmd){
+		printCmdinfo(p->cmds[i]);
+		i++;
+	}
+
+
+}
+
+*/
 void printCmdinfo(Cmd*cmd){
 	printf("Commandname:");
 	int j=0;
@@ -533,4 +565,11 @@ void printCmdinfo(Cmd*cmd){
 		printf(" &");
 	}
 	printf("\n");
+}
+
+char* createlsb()
+{
+	int i;
+	for(i=0;pids[i]!=0;i++)
+		printf("%d\n",pids[i] );
 }

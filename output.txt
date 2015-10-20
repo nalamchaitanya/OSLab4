@@ -1,0 +1,4 @@
+1445306567777	GMPInstallManager.simpleCheckAndInstall	INFO	Last check was: 2087 seconds ago, minimum seconds: 86400
+1445306567777	GMPInstallManager.simpleCheckAndInstall	INFO	Will not check for updates.
+1445306567825	GMPInstallManager.simpleCheckAndInstall	INFO	Last check was: 2087 seconds ago, minimum seconds: 86400
+1445306567825	GMPInstallManager.simpleCheckAndInstall	INFO	Will not check for updates.
